@@ -984,6 +984,7 @@ form {
   min-width: 0;
 }
 .app-topbar {
+  position: relative;
   height: 84px;
   display: flex;
   align-items: center;
@@ -1004,6 +1005,65 @@ form {
   display: flex;
   gap: 13px;
   align-items: center;
+  margin-left: auto;
+}
+.navbar-search {
+  position: absolute;
+  left: 42px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(420px, 42vw);
+  height: 44px;
+  padding: 4px 5px 4px 13px;
+  background: var(--paper);
+  border: 1px solid var(--gray);
+  border-radius: 999px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.navbar-search:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--gray));
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.navbar-search input {
+  flex: 1;
+  width: auto;
+  height: 100%;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  outline: 0;
+  font-size: 12px;
+}
+.navbar-search input:focus-visible {
+  outline: 0;
+}
+.navbar-search-submit {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+}
+.navbar-search-submit:hover {
+  background: color-mix(in srgb, var(--primary) 85%, black);
+}
+.chat-search-row {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: min(420px, 100%);
+}
+.chat-search-row .navbar-search {
+  position: static;
+  width: 100%;
+  transform: none;
 }
 .topbar-action {
   color: var(--muted);
@@ -1019,6 +1079,17 @@ form {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .topbar-name {
+    display: none;
+  }
+  .user-menu {
+    gap: 7px;
+  }
+  .app-topbar > .navbar-search {
+    width: min(420px, calc(100% - 280px));
+  }
 }
 .avatar {
   display: grid;
@@ -2763,13 +2834,20 @@ a.source-card:hover {
     margin-left: 0;
   }
   .app-topbar {
-    height: 72px;
-    padding: 0 19px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+    height: auto;
+    min-height: 72px;
+    padding: 10px 19px;
   }
   .desktop-breadcrumb {
     display: none;
   }
   .mobile-brand {
+    grid-column: 1;
+    grid-row: 1;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -2787,7 +2865,17 @@ a.source-card:hover {
     display: none;
   }
   .user-menu {
+    grid-column: 2;
+    grid-row: 1;
     gap: 4px;
+  }
+  .app-topbar > .navbar-search {
+    position: static;
+    justify-self: start;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: min(420px, 100%);
+    transform: none;
   }
   .app-main {
     padding: 25px 20px 40px;

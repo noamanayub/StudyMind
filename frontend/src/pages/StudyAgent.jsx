@@ -16,6 +16,7 @@ import { useCollection } from "../hooks/useCollection";
 import { api, errorMessage, get } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Companion from "../components/common/Companion";
+import NavbarSearch from "../components/common/NavbarSearch";
 import Button from "../components/common/Button";
 import { ErrorNotice, Loading } from "../components/common/Feedback";
 import SourceCard from "../components/chat/SourceCard";
@@ -222,6 +223,9 @@ export default function StudyAgent() {
               ) : <p className="chat-sessions-empty">Your saved conversations will appear here.</p>}
             </div>
           )}
+        </div>
+        <div className="chat-search-row">
+          <NavbarSearch />
         </div>
       </header>
       {(resource.error || workspaces.error || documents.error) && (

@@ -10,12 +10,12 @@ import {
   LogOut,
   ArrowUpRight,
   ListChecks,
-  Search,
   CalendarDays,
   Layers,
   Globe,
 } from "lucide-react";
 import Brand from "../components/common/Brand";
+import NavbarSearch from "../components/common/NavbarSearch";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { errorMessage } from "../services/api";
@@ -28,7 +28,6 @@ const items = [
   ["/app/review", Layers, "Daily review"],
   ["/app/plans", CalendarDays, "Study plans"],
   ["/app/research", Globe, "Web research"],
-  ["/app/search", Search, "Search"],
 ];
 function Navigation({ onNavigate }) {
   return (
@@ -123,9 +122,7 @@ export default function AppLayout() {
             </button>
             <Brand />
           </div>
-          <div className="desktop-breadcrumb">
-            Your space to <strong>understand.</strong>
-          </div>
+          <NavbarSearch />
           <div className="user-menu">
             <span className="topbar-name">{user.name}</span>
             <NavLink
