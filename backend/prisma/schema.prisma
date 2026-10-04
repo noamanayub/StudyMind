@@ -1,0 +1,396 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String
+  email            String           @unique
+  passwordHash     String           @map("password_hash")
+  avatarUrl        String?          @map("avatar_url")
+  answerStyle      String           @default("BALANCED") @map("answer_style")
+  explanationLevel String           @default("INTERMEDIATE") @map("explanation_level")
+  readingSize      String           @default("DEFAULT") @map("reading_size")
+  density          String           @default("COMFORTABLE")
+  reduceMotion     Boolean          @default(false) @map("reduce_motion")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  sessions         Session[]
+  workspaces       Workspace[]
+  documents        Document[]
+  conversations    Conversation[]
+  summaries        Summary[]
+  quizzes          Quiz[]
+  decks            FlashcardDeck[]
+  activities       StudyActivity[]
+  plans            StudyPlan[]
+  exams            ExamSession[]
+  research         ResearchReport[]
+  noteShares       NoteShare[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Workspace {
+  id            String          @id @default(uuid()) @db.Uuid
+  userId        String          @map("user_id") @db.Uuid
+  name          String
+  description   String          @default("")
+  icon          String          @default("book")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents     Document[]
+  conversations Conversation[]
+  summaries     Summary[]
+  quizzes       Quiz[]
+  decks         FlashcardDeck[]
+
+  @@index([userId, updatedAt])
+  @@map("workspaces")
+}
+
+model Summary {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  workspaceId String?    @map("workspace_id") @db.Uuid
+  documentIds String[]   @map("document_ids") @db.Uuid
+  requestId   String?    @map("request_id") @db.Uuid
+  title       String
+  kind        String     @default("SUMMARY")
+  format      String
+  content     String
+  sources     Json       @default("[]")
+  coverage    Json       @default("{}")
+  edited      Boolean    @default(false)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  shares      NoteShare[]
+
+  @@unique([userId, requestId])
+  @@index([userId, kind, updatedAt])
+  @@map("summaries")
+}
+
+model NoteShare {
+  id        String   @id @default(uuid()) @db.Uuid
+  summaryId String   @map("summary_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("VIEWER")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  summary   Summary  @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([summaryId, userId])
+  @@index([userId, createdAt])
+  @@map("note_shares")
+}
+
+model Quiz {
+  id            String         @id @default(uuid()) @db.Uuid
+  userId        String         @map("user_id") @db.Uuid
+  workspaceId   String?        @map("workspace_id") @db.Uuid
+  documentIds   String[]       @map("document_ids") @db.Uuid
+  requestId     String         @map("request_id") @db.Uuid
+  title         String
+  difficulty    String
+  questionCount Int            @map("question_count")
+  sources       Json           @default("[]")
+  coverage      Json           @default("{}")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace     Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  questions     QuizQuestion[]
+  attempts      QuizAttempt[]
+  exams         ExamSession[]
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id              String   @id @default(uuid()) @db.Uuid
+  quizId          String   @map("quiz_id") @db.Uuid
+  position        Int
+  question        String
+  type            String
+  options         String[] @default([])
+  correctAnswer   String   @map("correct_answer")
+  acceptedAnswers String[] @default([]) @map("accepted_answers")
+  explanation     String
+  quiz            Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, position])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid()) @db.Uuid
+  quizId    String   @map("quiz_id") @db.Uuid
+  requestId String   @map("request_id") @db.Uuid
+  score     Int
+  total     Int
+  results   Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, requestId])
+  @@map("quiz_attempts")
+}
+
+model FlashcardDeck {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  workspaceId String?     @map("workspace_id") @db.Uuid
+  documentIds String[]    @map("document_ids") @db.Uuid
+  requestId   String      @map("request_id") @db.Uuid
+  title       String
+  sources     Json        @default("[]")
+  coverage    Json        @default("{}")
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  cards       Flashcard[]
+
+  @@unique([userId, requestId])
+  @@index([userId, updatedAt])
+  @@map("flashcard_decks")
+}
+
+model Flashcard {
+  id           String            @id @default(uuid()) @db.Uuid
+  deckId       String            @map("deck_id") @db.Uuid
+  position     Int
+  front        String
+  back         String
+  status       String            @default("NEW")
+  dueAt        DateTime?         @map("due_at") @db.Timestamptz
+  intervalDays Int               @default(0) @map("interval_days")
+  ease         Float             @default(2.5)
+  repetitions  Int               @default(0)
+  reviews      FlashcardReview[]
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+  deck         FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@unique([deckId, position])
+  @@map("flashcards")
+}
+
+model ResearchReport {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  requestId       String   @map("request_id") @db.Uuid
+  query           String
+  content         String
+  sources         Json
+  supports        Json
+  suggestionsHtml String   @map("suggestions_html")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, requestId])
+  @@index([userId, createdAt])
+  @@map("research_reports")
+}
+
+model FlashcardReview {
+  id          String    @id @default(uuid()) @db.Uuid
+  cardId      String    @map("card_id") @db.Uuid
+  requestId   String    @map("request_id") @db.Uuid
+  rating      String
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  card        Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, requestId])
+  @@map("flashcard_reviews")
+}
+
+model StudyPlan {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  title        String
+  examDate     DateTime    @map("exam_date") @db.Date
+  dailyMinutes Int         @map("daily_minutes")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks        StudyTask[]
+
+  @@index([userId, examDate])
+  @@map("study_plans")
+}
+
+model StudyTask {
+  id          String    @id @default(uuid()) @db.Uuid
+  planId      String    @map("plan_id") @db.Uuid
+  title       String
+  date        DateTime  @db.Date
+  minutes     Int
+  kind        String
+  resourceId  String?   @map("resource_id") @db.Uuid
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  plan        StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, date])
+  @@map("study_tasks")
+}
+
+model ExamSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  quizId     String    @map("quiz_id") @db.Uuid
+  requestId  String    @map("request_id") @db.Uuid
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  deadline   DateTime  @db.Timestamptz
+  answers    Json      @default("[]")
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz
+  results    Json?
+  score      Int?
+  total      Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz       Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, requestId])
+  @@index([userId, startedAt])
+  @@map("exam_sessions")
+}
+
+model StudyActivity {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String
+  title      String
+  resourceId String?  @map("resource_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("study_activities")
+}
+
+model Document {
+  id             String          @id @default(uuid()) @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  workspaceId    String          @map("workspace_id") @db.Uuid
+  originalName   String          @map("original_name")
+  storedName     String          @map("stored_name")
+  mimeType       String          @map("mime_type")
+  extractionMode String          @default("TEXT") @map("extraction_mode")
+  sourceUrl      String?         @map("source_url")
+  fileSize       Int             @map("file_size")
+  status         String          @default("PROCESSING")
+  errorMessage   String?         @map("error_message")
+  pageCount      Int?            @map("page_count")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  chunks         DocumentChunk[]
+  job            ProcessingJob?
+  sources        Source[]
+
+  @@index([userId, workspaceId, status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id             String                     @id @default(uuid()) @db.Uuid
+  documentId     String                     @map("document_id") @db.Uuid
+  chunkIndex     Int                        @map("chunk_index")
+  pageNumber     Int?                       @map("page_number")
+  section        String?
+  content        String
+  embedding      Unsupported("vector(768)")
+  embeddingModel String                     @map("embedding_model")
+  document       Document                   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
+}
+
+model ProcessingJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  documentId  String    @unique @map("document_id") @db.Uuid
+  state       String    @default("PENDING")
+  attempts    Int       @default(0)
+  availableAt DateTime  @default(now()) @map("available_at") @db.Timestamptz
+  lockedAt    DateTime? @map("locked_at") @db.Timestamptz
+  lockToken   String?   @map("lock_token") @db.Uuid
+  lastError   String?   @map("last_error")
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([state, availableAt])
+  @@map("processing_jobs")
+}
+
+model Conversation {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  workspaceId String?    @map("workspace_id") @db.Uuid
+  documentIds String[]   @default([]) @map("document_ids") @db.Uuid
+  title       String     @default("New conversation")
+  scope       String     @default("all")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@index([userId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id                   String       @id @default(uuid()) @db.Uuid
+  conversationId       String       @map("conversation_id") @db.Uuid
+  role                 String
+  content              String
+  generalKnowledge     Boolean      @default(false) @map("general_knowledge")
+  insufficientEvidence Boolean      @default(false) @map("insufficient_evidence")
+  requestId            String?      @map("request_id") @db.Uuid
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sources              Source[]
+
+  @@unique([conversationId, requestId, role])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model Source {
+  id              String    @id @default(uuid()) @db.Uuid
+  messageId       String    @map("message_id") @db.Uuid
+  documentId      String?   @map("document_id") @db.Uuid
+  documentName    String    @map("document_name")
+  pageNumber      Int?      @map("page_number")
+  section         String?
+  chunkId         String    @map("chunk_id") @db.Uuid
+  contentPreview  String    @map("content_preview")
+  similarityScore Float     @map("similarity_score")
+  message         Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  document        Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([messageId])
+  @@map("sources")
+}

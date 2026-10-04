@@ -1,0 +1,29 @@
+{
+  "name": "study-mind",
+  "private": true,
+  "type": "module",
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "predev": "node scripts/start-dev-db.js",
+    "dev": "concurrently --kill-others -n web,api,agent -c magenta,cyan,gray \"npm run dev -w frontend\" \"npm run dev -w backend\" \"node scripts/start-agent.js\"",
+    "build": "npm run build -w frontend",
+    "lint": "eslint frontend/src backend/src backend/tests",
+    "test": "node scripts/test.js",
+    "test:api": "node scripts/test.js --suite api",
+    "db:generate": "npm run db:generate -w backend",
+    "db:migrate": "npm run db:migrate -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "eslint": "^9.39.0",
+    "@eslint/js": "^9.39.0",
+    "globals": "^16.5.0",
+    "eslint-plugin-react-hooks": "^7.0.0"
+  }
+}
