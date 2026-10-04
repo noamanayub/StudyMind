@@ -5,7 +5,6 @@ import {
   Library,
   MessageSquare,
   Settings,
-  UserRound,
   Menu,
   X,
   LogOut,
@@ -53,16 +52,6 @@ function Navigation({ onNavigate }) {
           </p>
           <span>Your next idea starts here.</span>
         </div>
-        <nav aria-label="Account">
-          <NavLink to="/app/settings" onClick={onNavigate}>
-            <Settings size={18} />
-            Settings
-          </NavLink>
-          <NavLink to="/app/profile" onClick={onNavigate}>
-            <UserRound size={18} />
-            My profile
-          </NavLink>
-        </nav>
       </div>
     </>
   );
